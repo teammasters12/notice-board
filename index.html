@@ -305,34 +305,36 @@
 
   <div id="toast" class="toast"></div>
 
-  <script>
-  const { createClient } = window.supabase;
-
-  const supabaseClient = createClient(
+ <script>
+  const sb = window.supabase.createClient(
     "https://jjxsjggnzvzyupjhnxev.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqeHNqZ2duenZ6eXVwamhueGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODcyMDIsImV4cCI6MjA4ODY2MzIwMn0.fyNmsSolIEksQpF8XxF5t7Urezwnpgb0vbTsWxqTdyI"
   );
 
-  async function loadStudents() {
-    const { data, error } = await supabaseClient
-      .from("students")
-      .select("*")
-      .order("student_id", { ascending: false });
+  const debugEl = document.getElementById("debug");
+  function debug(msg, obj) {
+    console.log(msg, obj || "");
+    if (debugEl) debugEl.textContent = msg + (obj ? "\n" + JSON.stringify(obj, null, 2) : "");
+  }
 
+  function v(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  }
+
+  async function loadStudents() {
+    const { data, error } = await sb.from("students").select("*").order("student_id", { ascending: false });
     if (error) {
-      console.error("Load error:", error);
-      alert("Load failed: " + error.message);
+      debug("Load failed", error);
       return;
     }
-
     showStudents(data || []);
   }
 
   function showStudents(data) {
     const table = document.getElementById("studentTable");
     table.innerHTML = "";
-
-    (data || []).forEach((s) => {
+    data.forEach((s) => {
       table.innerHTML += `
         <tr>
           <td>${s.student_id ?? ""}</td>
@@ -341,80 +343,91 @@
           <td>${s.class ?? ""}</td>
           <td>${s.phone ?? ""}</td>
           <td>${s.city ?? ""}</td>
-          <td><button onclick="deleteStudent(${s.student_id})">Delete</button></td>
+          <td><button type="button" onclick="deleteStudent(${s.student_id})">Delete</button></td>
         </tr>
       `;
     });
   }
 
   async function addStudent() {
-    const student = {
-      first_name: document.getElementById("first_name").value,
-      last_name: document.getElementById("last_name").value,
-      gender: document.getElementById("gender").value,
-      date_of_birth: document.getElementById("dob").value,
-      age: document.getElementById("age").value,
-      grade: document.getElementById("grade").value,
-      class: document.getElementById("class").value,
-      admission_number: document.getElementById("admission").value,
-      phone: document.getElementById("phone").value,
-      email: document.getElementById("email").value,
-      address: document.getElementById("address").value,
-      city: document.getElementById("city").value,
-      guardian_name: document.getElementById("guardian_name").value,
-      guardian_phone: document.getElementById("guardian_phone").value,
-      guardian_email: document.getElementById("guardian_email").value,
-      joining_date: document.getElementById("joining_date").value,
-      house: document.getElementById("house").value,
-      status: document.getElementById("status").value
-    };
-  
-    console.log("Adding student:", student);
-  
-    const { data, error } = await supabase.from("students").insert([student]);
-  
-    if (error) {
-      console.error("Insert error:", error);
-      alert("⚠️ Failed to add student: " + error.message);
-    } else {
-      alert("✅ Student added successfully!");
-      document.querySelectorAll("input").forEach(input => input.value = "");
+    debug("addStudent() clicked");
+
+    try {
+      const payload = {
+        first_name: v("first_name") || null,
+        last_name: v("last_name") || null,
+        gender: v("gender") || null,
+        date_of_birth: document.getElementById("dob")?.value || null,
+        age: v("age") ? Number(v("age")) : null,
+        grade: v("grade") || null,
+        class: v("class") || null,
+        admission_number: v("admission") || null,
+        phone: v("phone") || null,
+        email: v("email") || null,
+        address: v("address") || null,
+        city: v("city") || null,
+        guardian_name: v("guardian_name") || null,
+        guardian_phone: v("guardian_phone") || null,
+        guardian_email: v("guardian_email") || null,
+        joining_date: document.getElementById("joining_date")?.value || null,
+        house: v("house") || null,
+        status: v("status") || null
+      };
+
+      // basic required check
+      if (!payload.first_name || !payload.last_name || !payload.grade) {
+        debug("Missing required fields: first_name, last_name, grade");
+        alert("Fill First Name, Last Name, and Grade");
+        return;
+      }
+
+      const { data, error, status } = await sb
+        .from("students")
+        .insert([payload])
+        .select("student_id, first_name, last_name")
+        .single();
+
+      if (error) {
+        debug("Insert failed (Supabase)", { status, error });
+        alert("Insert failed: " + error.message);
+        return;
+      }
+
+      debug("Insert success", data);
+      alert("Student added ✅ ID: " + data.student_id);
       loadStudents();
+    } catch (e) {
+      debug("Insert crashed (JS error)", e);
+      alert("JS Error: " + (e.message || e));
     }
   }
 
   async function deleteStudent(id) {
-    const { error } = await supabaseClient
-      .from("students")
-      .delete()
-      .eq("student_id", id);
-
+    const { error } = await sb.from("students").delete().eq("student_id", id);
     if (error) {
-      console.error("Delete error:", error);
+      debug("Delete failed", error);
       alert("Delete failed: " + error.message);
       return;
     }
-
     loadStudents();
   }
 
   async function searchStudent() {
-    const text = document.getElementById("search").value.trim();
-    let query = supabaseClient.from("students").select("*");
-
-    if (text) {
-      query = query.or(`first_name.ilike.%${text}%,last_name.ilike.%${text}%`);
-    }
-
-    const { data, error } = await query;
+    const text = v("search");
+    let q = sb.from("students").select("*");
+    if (text) q = q.or(`first_name.ilike.%${text}%,last_name.ilike.%${text}%`);
+    const { data, error } = await q;
     if (error) {
-      console.error("Search error:", error);
-      alert("Search failed: " + error.message);
+      debug("Search failed", error);
       return;
     }
-
     showStudents(data || []);
   }
+
+  // make sure onclick can always find functions
+  window.addStudent = addStudent;
+  window.deleteStudent = deleteStudent;
+  window.searchStudent = searchStudent;
 
   loadStudents();
 </script>
