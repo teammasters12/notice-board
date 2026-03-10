@@ -347,43 +347,43 @@
     });
   }
 
-  async function addStudent() {
-    const payload = {
-      first_name: document.getElementById("first_name").value.trim(),
-      last_name: document.getElementById("last_name").value.trim(),
-      gender: document.getElementById("gender").value.trim() || null,
-      date_of_birth: document.getElementById("dob").value || null,
-      age: document.getElementById("age").value ? Number(document.getElementById("age").value) : null,
-      grade: document.getElementById("grade").value.trim() || null,
-      class: document.getElementById("class").value.trim() || null,
-      admission_number: document.getElementById("admission").value.trim() || null,
-      phone: document.getElementById("phone").value.trim() || null,
-      email: document.getElementById("email").value.trim() || null,
-      address: document.getElementById("address").value.trim() || null,
-      city: document.getElementById("city").value.trim() || null,
-      guardian_name: document.getElementById("guardian_name").value.trim() || null,
-      guardian_phone: document.getElementById("guardian_phone").value.trim() || null,
-      guardian_email: document.getElementById("guardian_email").value.trim() || null,
-      joining_date: document.getElementById("joining_date").value || null,
-      house: document.getElementById("house").value.trim() || null,
-      status: document.getElementById("status").value.trim() || null
-    };
+async function addStudent() {
+  const payload = {
+    first_name: document.getElementById("first_name").value.trim(),
+    last_name: document.getElementById("last_name").value.trim(),
+    gender: document.getElementById("gender").value.trim() || null,
+    date_of_birth: document.getElementById("dob").value || null,
+    age: document.getElementById("age").value ? Number(document.getElementById("age").value) : null,
+    grade: document.getElementById("grade").value.trim() || null,
+    class: document.getElementById("class").value.trim() || null,
+    admission_number: document.getElementById("admission").value.trim() || null,
+    phone: document.getElementById("phone").value.trim() || null,
+    email: document.getElementById("email").value.trim() || null,
+    address: document.getElementById("address").value.trim() || null,
+    city: document.getElementById("city").value.trim() || null,
+    guardian_name: document.getElementById("guardian_name").value.trim() || null,
+    guardian_phone: document.getElementById("guardian_phone").value.trim() || null,
+    guardian_email: document.getElementById("guardian_email").value.trim() || null,
+    joining_date: document.getElementById("joining_date").value || null,
+    house: document.getElementById("house").value.trim() || null,
+    status: document.getElementById("status").value.trim() || null
+  };
 
-    const { data, error } = await supabaseClient
-      .from("students")
-      .insert([payload])
-      .select();
+  const { data, error } = await supabase
+    .from("students")
+    .insert([payload])
+    .select("student_id, first_name, last_name");
 
-    if (error) {
-      console.error("Insert error:", error);
-      alert("Insert failed: " + error.message);
-      return;
-    }
-
-    console.log("Inserted:", data);
-    alert("Student added successfully ✅");
-    loadStudents();
+  if (error) {
+    console.error("Insert error:", error);
+    alert("Insert failed: " + error.message);
+    return;
   }
+
+  console.log("Inserted row:", data);
+  alert("Student added ✅");
+  loadStudents();
+}
 
   async function deleteStudent(id) {
     const { error } = await supabaseClient
