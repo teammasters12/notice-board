@@ -160,7 +160,7 @@
 
 <script>
   const SUPABASE_URL = "https://jjxsjggnzvzyupjhnxev.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqeHNqZ2duenZ6eXVwamhueGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODcyMDIsImV4cCI6MjA4ODY2MzIwMn0.fyNmsSolIEksQpF8XxF5t7Urezwnpgb0vbTsWxqTdyI";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqeHNqZ2duenZ6eXVwamhueGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODcyMDIsImV4cCI6MjA4ODY2MzIwMn0.fyNmsSolIEksQpF8XxF5t7Urezwnpgb0vbTsWxqTdyI"; // keep your real key
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let currentRole = "guest";
@@ -168,208 +168,99 @@
 
   function log(msg, obj){
     console.log(msg, obj || "");
-    document.getElementById("debug").textContent = obj ? msg + "\n" + JSON.stringify(obj, null, 2) : msg;
+    const d = document.getElementById("debug");
+    if (d) d.textContent = obj ? msg + "\n" + JSON.stringify(obj, null, 2) : msg;
   }
-  function esc(s){ return String(s || "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));}
-  function g(id){ return document.getElementById(id).value.trim(); }
 
   function showSection(id){
-    ["home","add","explore"].forEach(x => document.getElementById(x).classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
-    if(id === "explore") loadCards();
+    ["home","add","explore"].forEach(x => {
+      const el = document.getElementById(x);
+      if (el) el.classList.add("hidden");
+    });
+    const target = document.getElementById(id);
+    if (target) target.classList.remove("hidden");
+    if (id === "explore" && typeof loadCards === "function") loadCards();
   }
 
-  function openAuth(){ document.getElementById("authModal").classList.add("show"); }
-  function closeAuth(){ document.getElementById("authModal").classList.remove("show"); }
-  function closeDetails(){ document.getElementById("detailsModal").classList.remove("show"); }
+  function openAuth(){ document.getElementById("authModal")?.classList.add("show"); }
+  function closeAuth(){ document.getElementById("authModal")?.classList.remove("show"); }
 
   async function refreshAuth(){
     const { data:{ user } } = await sb.auth.getUser();
     currentUser = user || null;
-    currentRole = "guest";
 
-    if(currentUser){
-      const { data } = await sb.from("profiles").select("role").eq("id", currentUser.id).single();
-      currentRole = data?.role || "viewer";
+    if (!currentUser){
+      currentRole = "guest";
+    } else {
+      // if profiles missing/error, still logged in as viewer
+      const { data, error } = await sb.from("profiles").select("role").eq("id", currentUser.id).single();
+      currentRole = error ? "viewer" : (data?.role || "viewer");
     }
-    document.getElementById("roleBadge").textContent = currentRole.toUpperCase();
-    document.getElementById("logoutBtn").classList.toggle("hidden", !currentUser);
+
+    const badge = document.getElementById("roleBadge");
+    if (badge) badge.textContent = currentRole.toUpperCase();
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) logoutBtn.classList.toggle("hidden", !currentUser);
   }
 
-  async function login(){
-    const email = g("login_email");
-    const password = document.getElementById("login_password").value;
+  async function doLogin(){
+    const email = document.getElementById("login_email")?.value.trim();
+    const password = document.getElementById("login_password")?.value;
+
     const { error } = await sb.auth.signInWithPassword({ email, password });
-    if(error){ log("Login failed", error); alert("Login failed: " + error.message); return; }
+    if (error){
+      log("Login failed", error);
+      alert("Login failed: " + error.message);
+      return;
+    }
+
+    await refreshAuth();
     closeAuth();
-    await refreshAuth();
-    log("Login success");
+    log("Login success ✅");
   }
 
-  async function logout(){
-    await sb.auth.signOut();
-    await refreshAuth();
-    log("Logged out");
-  }
-
-  function adminOnly(action){
-    if(currentRole !== "admin"){
-      alert(action + " requires admin login");
-      openAuth();
-      return false;
+  async function doLogout(){
+    const { error } = await sb.auth.signOut();
+    if (error){
+      log("Logout failed", error);
+      alert("Logout failed: " + error.message);
+      return;
     }
-    return true;
-  }
-
-  function filePath(prefix, fileName){
-    const ext = (fileName.split(".").pop() || "bin").toLowerCase();
-    return prefix + "/" + Date.now() + "_" + Math.floor(Math.random()*100000) + "." + ext;
-  }
-
-  async function uploadIfAny(bucket, inputId, prefix){
-    const input = document.getElementById(inputId);
-    if(!input.files || !input.files[0]) return null;
-    const file = input.files[0];
-    const path = filePath(prefix, file.name);
-    const { error } = await sb.storage.from(bucket).upload(path, file);
-    if(error) throw error;
-    return path;
-  }
-
-  function idPhotoUrl(path){
-    if(!path) return "";
-    return sb.storage.from("id-photos").getPublicUrl(path).data.publicUrl;
-  }
-
-  async function loadCards(){
-    const q = g("search");
-    let query = sb.from("students")
-      .select("student_id,first_name,last_name,grade,class_name,phone,id_photo_path,birth_certificate_path,transport_method")
-      .order("student_id", { ascending:false });
-
-    if(q){
-      query = query.or("first_name.ilike.%" + q + "%,last_name.ilike.%" + q + "%,phone.ilike.%" + q + "%,class_name.ilike.%" + q + "%");
-    }
-
-    const { data, error } = await query;
-    const box = document.getElementById("cards");
-    box.innerHTML = "";
-
-    if(error){ log("Load cards failed", error); box.innerHTML = "<p style='color:#fca5a5'>Load failed</p>"; return; }
-    if(!data || !data.length){ box.innerHTML = "<p style='color:#bbb'>No records found.</p>"; return; }
-
-    data.forEach(s => {
-      const img = s.id_photo_path ? "<img src='" + idPhotoUrl(s.id_photo_path) + "'>" : "<span style='color:#777'>No ID photo</span>";
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = "<div class='photo'>" + img + "</div>" +
-        "<h4>" + esc(s.first_name) + " " + esc(s.last_name) + "</h4>" +
-        "<p>" + esc(s.grade) + " + " + esc(s.class_name) + "</p>" +
-        "<small>" + esc(s.phone) + "</small>";
-      card.onclick = function(){ openDetails(s.student_id); };
-      box.appendChild(card);
-    });
-  }
-
-  async function openDetails(id){
-    const { data, error } = await sb.from("students").select("*").eq("student_id", id).single();
-    if(error){ log("Open details failed", error); alert("Cannot open details: " + error.message); return; }
-
-    const b = document.getElementById("detailsBody");
-    const img = data.id_photo_path ? "<img src='" + idPhotoUrl(data.id_photo_path) + "' style='width:150px;height:170px;object-fit:cover;border-radius:10px;border:1px solid #333'>" : "No photo";
-    const addr = [data.address_line1,data.address_line2,data.address_line3].filter(Boolean).join(", ") || "-";
-    const birthBtn = data.birth_certificate_path ? "<button class='btn' onclick=\"downloadBirth('" + esc(data.birth_certificate_path) + "')\">Download Birth Certificate</button>" : "<span style='color:#999'>No Birth Certificate</span>";
-    const delBtn = currentRole === "admin" ? "<button class='btn red' onclick='deleteStudent(" + Number(data.student_id) + ")'>Delete Student</button>" : "";
-
-    b.innerHTML =
-      "<div style='margin-bottom:10px'>" + img + "</div>" +
-      "<div class='two'>" +
-      "<div class='kv'><b>Name</b><div>" + esc((data.first_name||"") + " " + (data.last_name||"")) + "</div></div>" +
-      "<div class='kv'><b>Grade + Class</b><div>" + esc((data.grade||"") + " + " + (data.class_name||"")) + "</div></div>" +
-      "<div class='kv'><b>Phone</b><div>" + esc(data.phone||"-") + "</div></div>" +
-      "<div class='kv'><b>Transport</b><div>" + esc(data.transport_method||"-") + "</div></div>" +
-      "<div class='kv'><b>Address</b><div>" + esc(addr) + "</div></div>" +
-      "<div class='kv'><b>Father</b><div>" + esc((data.father_name||"-") + " | " + (data.father_phone||"-")) + "</div></div>" +
-      "<div class='kv'><b>Mother</b><div>" + esc((data.mother_name||"-") + " | " + (data.mother_phone||"-")) + "</div></div>" +
-      "</div>" +
-      "<div style='margin-top:12px;display:flex;gap:8px;flex-wrap:wrap'>" + birthBtn + delBtn + "</div>";
-
-    document.getElementById("detailsModal").classList.add("show");
-  }
-
-  async function downloadBirth(path){
-    const { data, error } = await sb.storage.from("birth-certificates").createSignedUrl(path, 60);
-    if(error){ log("Birth download failed", error); alert(error.message); return; }
-    window.open(data.signedUrl, "_blank");
-  }
-
-  async function deleteStudent(id){
-    if(!adminOnly("Delete")) return;
-    if(!confirm("Remove this student?")) return;
-    const { error } = await sb.from("students").delete().eq("student_id", id);
-    if(error){ log("Delete failed", error); alert(error.message); return; }
-    closeDetails();
-    loadCards();
-    log("Student deleted");
-  }
-
-  document.getElementById("addForm").addEventListener("submit", async function(e){
-    e.preventDefault();
-    if(!adminOnly("Add student")) return;
-    if(!confirm("Confirm add student?")) return;
-
-    try{
-      const idPhotoPath = await uploadIfAny("id-photos", "id_photo", "students/id-photo");
-      const birthPath = await uploadIfAny("birth-certificates", "birth_certificate", "students/birth");
-
-      const payload = {
-        first_name: g("first_name"),
-        last_name: g("last_name"),
-        grade: g("grade"),
-        class_name: g("class_name"),
-        phone: g("phone") || null,
-        email: g("email") || null,
-        date_of_birth: document.getElementById("date_of_birth").value || null,
-        age: g("age") ? Number(g("age")) : null,
-        transport_method: g("transport_method") || null,
-        address_line1: g("address_line1") || null,
-        address_line2: g("address_line2") || null,
-        address_line3: g("address_line3") || null,
-        father_name: g("father_name") || null,
-        father_id: g("father_id") || null,
-        father_phone: g("father_phone") || null,
-        father_profession: g("father_profession") || null,
-        father_official_address: g("father_official_address") || null,
-        father_office_phone: g("father_office_phone") || null,
-        mother_name: g("mother_name") || null,
-        mother_id: g("mother_id") || null,
-        mother_phone: g("mother_phone") || null,
-        mother_profession: g("mother_profession") || null,
-        mother_official_address: g("mother_official_address") || null,
-        mother_office_phone: g("mother_office_phone") || null,
-        id_photo_path: idPhotoPath,
-        birth_certificate_path: birthPath
-      };
-
-      const { error } = await sb.from("students").insert([payload]);
-      if(error){ log("Insert failed", error); alert("Insert failed: " + error.message); return; }
-
-      log("Student added successfully");
-      this.reset();
-      showSection("explore");
-      loadCards();
-    }catch(err){
-      log("Add crashed", { message: err.message });
-      alert("Error: " + err.message);
-    }
-  });
-
-  (async function init(){
     await refreshAuth();
     showSection("home");
-    loadCards(); // pre-load
-    sb.auth.onAuthStateChange(async ()=>{ await refreshAuth(); });
-    log("UI loaded ✅");
+    log("Logged out ✅");
+  }
+
+  function bindUI(){
+    document.getElementById("btnHome")?.addEventListener("click", () => showSection("home"));
+    document.getElementById("btnAdd")?.addEventListener("click", () => showSection("add"));
+    document.getElementById("btnExplore")?.addEventListener("click", () => showSection("explore"));
+
+    document.getElementById("btnLogin")?.addEventListener("click", openAuth);
+    document.getElementById("logoutBtn")?.addEventListener("click", doLogout);
+
+    document.getElementById("doLoginBtn")?.addEventListener("click", doLogin);
+    document.getElementById("closeAuthBtn")?.addEventListener("click", closeAuth);
+  }
+
+  // global fallback (if any old inline onclick still exists)
+  window.showSection = showSection;
+  window.openAuth = openAuth;
+  window.closeAuth = closeAuth;
+  window.login = doLogin;
+  window.logout = doLogout;
+
+  window.addEventListener("error", (e) => log("JS Error: " + e.message));
+  window.addEventListener("unhandledrejection", (e) => log("Promise Error", { reason: String(e.reason) }));
+
+  (async function init(){
+    bindUI();
+    await refreshAuth();
+    showSection("home");
+    if (typeof loadCards === "function") loadCards();
+    sb.auth.onAuthStateChange(async () => { await refreshAuth(); });
+    log("UI loaded ✅ nav/auth working");
   })();
 </script>
 </body>
