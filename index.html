@@ -1,69 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Grade 10 Students Database</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root{
-      --bg:#070707; --panel:#111; --panel2:#171717; --line:#2a2a2a;
-      --text:#f5f5f5; --muted:#aaa; --red:#ef4444; --red2:#b91c1c;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(circle at 10% 0%,#220c0c,transparent 35%),var(--bg);color:var(--text)}
-    .wrap{max-width:1200px;margin:auto;padding:16px}
-    .top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
-      border:1px solid var(--line);background:#0e0e0e;border-radius:12px;padding:10px 12px;position:sticky;top:8px;z-index:5}
-    .btn{padding:9px 12px;border-radius:10px;border:1px solid #3a3a3a;background:#1a1a1a;color:#fff;cursor:pointer}
-    .btn.red{background:linear-gradient(135deg,var(--red),var(--red2));border:none}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    .panel{margin-top:12px;border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--panel2));border-radius:12px;padding:14px}
-    .hidden{display:none}
-    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-    .field{display:flex;flex-direction:column;gap:5px}
-    label{font-size:.82rem;color:#ddd}
-    input,select,textarea{padding:10px;border-radius:10px;border:1px solid #333;background:#0d0d0d;color:#fff}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap}
-    .toolbar input{flex:1;min-width:240px}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:10px}
-    .card{border:1px solid #2d2d2d;background:#0d0d0d;border-radius:12px;padding:10px;cursor:pointer}
-    .photo{height:120px;background:#171717;border:1px solid #333;border-radius:10px;display:grid;place-items:center;overflow:hidden}
-    .photo img{width:100%;height:100%;object-fit:cover}
-    .card h4{margin:8px 0 2px;text-align:center}
-    .card p,.card small{margin:0;text-align:center;color:#bbb}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:14px;z-index:50}
-    .modal.show{display:flex}
-    .box{width:min(900px,100%);max-height:90vh;overflow:auto;border:1px solid #333;border-radius:12px;background:#101010;padding:14px}
-    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .kv{border:1px solid #2b2b2b;border-radius:10px;background:#0c0c0c;padding:8px}
-    #debug{white-space:pre-wrap;color:#fca5a5;font-size:.85rem}
-    footer{margin-top:12px;border:1px solid #2a2a2a;border-radius:12px;padding:12px;background:#0b0b0b;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    @media(max-width:980px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}}
-    @media(max-width:560px){.grid{grid-template-columns:1fr}}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Grade 10 Students Database</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#060606; --panel:#101010; --panel2:#171717; --line:#2a2a2a;
+    --text:#f5f5f5; --muted:#a3a3a3; --red:#ef4444; --red2:#b91c1c;
+    --glow:0 0 18px rgba(239,68,68,.28);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(circle at 20% 0%,#220b0b,transparent 40%),var(--bg);color:var(--text)}
+  .wrap{max-width:1250px;margin:auto;padding:16px}
+  .top{position:sticky;top:8px;z-index:10;backdrop-filter:blur(6px);
+    border:1px solid var(--line);background:rgba(10,10,10,.85);border-radius:12px;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:38px;height:38px;border-radius:10px;border:1px dashed #444;display:grid;place-items:center;color:#777}
+  .btn{padding:9px 12px;border-radius:10px;border:1px solid #3a3a3a;background:#1a1a1a;color:#fff;cursor:pointer}
+  .btn.red{background:linear-gradient(135deg,var(--red),var(--red2));border:none}
+  .btn:hover{box-shadow:var(--glow);border-color:#7f1d1d}
+  .pill{padding:6px 10px;border-radius:999px;background:#1a1a1a;border:1px solid #343434;font-size:.85rem;color:#ddd}
+  .panel{border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);margin-top:12px}
+  .hidden{display:none}
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{font-size:.82rem;color:#ddd}
+  input,select,textarea{padding:10px;border-radius:10px;border:1px solid #333;background:#0e0e0e;color:#fff;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--red);box-shadow:var(--glow)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap}
+  .toolbar input{flex:1;min-width:240px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:10px}
+  .card{border:1px solid #2d2d2d;background:#0d0d0d;border-radius:14px;padding:10px;cursor:pointer;transition:.2s}
+  .card:hover{transform:translateY(-3px);border-color:#7f1d1d;box-shadow:var(--glow)}
+  .photo{height:130px;border-radius:10px;border:1px solid #333;background:#151515;display:grid;place-items:center;overflow:hidden}
+  .photo img{width:100%;height:100%;object-fit:cover}
+  .card h4{margin:10px 0 4px;text-align:center}
+  .card p{margin:0;text-align:center;color:#ddd}
+  .card small{display:block;text-align:center;color:#aaa;margin-top:6px}
+  footer{margin-top:16px;border:1px solid #2a2a2a;border-radius:12px;padding:14px;background:#0c0c0c;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:14px;z-index:99}
+  .modal.show{display:flex}
+  .box{width:min(900px,100%);max-height:90vh;overflow:auto;background:#101010;border:1px solid #303030;border-radius:14px;padding:16px}
+  .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .kv{padding:8px;border:1px solid #2a2a2a;border-radius:10px;background:#0c0c0c}
+  @media(max-width:980px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-grid{grid-template-columns:1fr}}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}}
+</style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top">
-    <strong>Grade 10 Students Database</strong>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button onclick="showSection('home')">Home</button>
-      <button onclick="showSection('add')">Add</button>
-      <button onclick="showSection('explore')">Explore</button>
-      <button onclick="openAuth()">Login</button>
-      <button id="logoutBtn" class="hidden" onclick="logoutUser()">Logout</button>
-      <span id="roleBadge" class="btn" style="cursor:default">GUEST</span>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">LOGO</div>
+      <div>
+        <strong>Grade 10 Students Database</strong><br>
+        <small style="color:#aaa">Futuristic Red/Black</small>
+      </div>
     </div>
-  </div>
+    <nav style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="showSection('home')">Home</button>
+      <button class="btn" onclick="showSection('add')">Add</button>
+      <button class="btn" onclick="showSection('remove')">Remove</button>
+      <button class="btn" onclick="showSection('explore')">Explore</button>
+    </nav>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span id="roleBadge" class="pill">GUEST</span>
+      <button class="btn" onclick="openAuth()">Login</button>
+      <button class="btn hidden" id="logoutBtn" onclick="logoutUser()">Logout</button>
+    </div>
+  </header>
 
   <section id="home" class="panel">
-    <h2 style="margin-top:0">Welcome</h2>
-    <p style="color:#bbb">Use quick links: Add / Explore. Add & Remove require Admin login.</p>
+    <h1 style="margin:0 0 8px">Grade 10 Students Database</h1>
+    <p style="color:#bbb">Choose: Add, Remove, or Explore. Add/Remove requires admin login.</p>
   </section>
 
   <section id="add" class="panel hidden">
-    <h3 style="margin-top:0">Add Student</h3>
+    <h3>Add Student Details</h3>
     <form id="addForm">
       <div class="grid">
         <div class="field"><label>First Name *</label><input id="first_name" required></div>
@@ -71,12 +88,15 @@
         <div class="field"><label>Grade *</label><input id="grade" required></div>
         <div class="field"><label>Class *</label><input id="class_name" required></div>
 
-        <div class="field"><label>Phone</label><input id="phone"></div>
-        <div class="field"><label>Email</label><input id="email" type="email"></div>
-        <div class="field"><label>DOB</label><input id="date_of_birth" type="date"></div>
+        <div class="field"><label>Gender</label><input id="gender"></div>
+        <div class="field"><label>Date of Birth</label><input id="dob" type="date"></div>
         <div class="field"><label>Age</label><input id="age" type="number"></div>
+        <div class="field"><label>Phone</label><input id="phone"></div>
 
-        <div class="field"><label>Transport</label>
+        <div class="field"><label>Email</label><input id="email" type="email"></div>
+        <div class="field"><label>Status</label><input id="status" placeholder="Active / Inactive"></div>
+        <div class="field">
+          <label>Transportation Method</label>
           <select id="transport_method">
             <option value="">Select...</option>
             <option>public transport - bus (sltb)</option>
@@ -87,45 +107,51 @@
             <option>other</option>
           </select>
         </div>
+        <div></div>
+
         <div class="field"><label>Address Line 1</label><input id="address_line1"></div>
         <div class="field"><label>Address Line 2</label><input id="address_line2"></div>
         <div class="field"><label>Address Line 3</label><input id="address_line3"></div>
+        <div></div>
 
         <div class="field"><label>Father Name</label><input id="father_name"></div>
         <div class="field"><label>Father ID</label><input id="father_id"></div>
         <div class="field"><label>Father Phone</label><input id="father_phone"></div>
-        <div class="field"><label>Father Profession</label><input id="father_profession"></div>
+        <div class="field"><label>Father Profession/Designation</label><input id="father_profession"></div>
         <div class="field"><label>Father Official Address</label><input id="father_official_address"></div>
         <div class="field"><label>Father Office Phone</label><input id="father_office_phone"></div>
 
         <div class="field"><label>Mother Name</label><input id="mother_name"></div>
         <div class="field"><label>Mother ID</label><input id="mother_id"></div>
         <div class="field"><label>Mother Phone</label><input id="mother_phone"></div>
-        <div class="field"><label>Mother Profession</label><input id="mother_profession"></div>
+        <div class="field"><label>Mother Profession/Designation</label><input id="mother_profession"></div>
         <div class="field"><label>Mother Official Address</label><input id="mother_official_address"></div>
         <div class="field"><label>Mother Office Phone</label><input id="mother_office_phone"></div>
 
         <div class="field"><label>ID Photo</label><input id="id_photo" type="file" accept="image/*"></div>
         <div class="field"><label>Birth Certificate</label><input id="birth_certificate" type="file" accept=".pdf,image/*"></div>
       </div>
-      <div style="margin-top:10px">
+      <div style="margin-top:12px">
         <button class="btn red" type="submit">Add Student</button>
       </div>
     </form>
   </section>
 
+  <section id="remove" class="panel hidden">
+    <h3>Remove Student</h3>
+    <div class="toolbar">
+      <input id="remove_id" placeholder="Enter Student ID">
+      <button class="btn red" onclick="removeById()">Remove Student</button>
+    </div>
+  </section>
+
   <section id="explore" class="panel hidden">
-    <h3 style="margin-top:0">Explore Students</h3>
+    <h3>Explore Students</h3>
     <div class="toolbar">
       <input id="search" placeholder="Search by name / phone / class" oninput="loadCards()">
       <button class="btn" onclick="loadCards()">Refresh</button>
     </div>
     <div id="cards" class="cards"></div>
-  </section>
-
-  <section class="panel">
-    <h4 style="margin:0 0 8px">Debug</h4>
-    <div id="debug">Ready.</div>
   </section>
 
   <footer>
@@ -136,13 +162,13 @@
 
 <div id="authModal" class="modal">
   <div class="box">
-    <h3 style="margin-top:0">Login</h3>
-    <div class="two">
+    <h3>Supabase User Login</h3>
+    <div class="detail-grid">
       <div class="field"><label>Email</label><input id="login_email" type="email"></div>
       <div class="field"><label>Password</label><input id="login_password" type="password"></div>
     </div>
     <div style="margin-top:10px;display:flex;gap:8px">
-      <button class="btn red" onclick="login()">Login</button>
+      <button class="btn red" onclick="loginUser()">Login</button>
       <button class="btn" onclick="closeAuth()">Close</button>
     </div>
   </div>
@@ -151,58 +177,35 @@
 <div id="detailsModal" class="modal">
   <div class="box">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-      <h3 style="margin:0">Student Details</h3>
+      <h3>Student Details</h3>
       <button class="btn" onclick="closeDetails()">Close</button>
     </div>
-    <div id="detailsBody" style="margin-top:10px"></div>
+    <div id="detailsBody"></div>
   </div>
 </div>
 
 <script>
 const SUPABASE_URL = "https://jjxsjggnzvzyupjhnxev.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqeHNqZ2duenZ6eXVwamhueGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODcyMDIsImV4cCI6MjA4ODY2MzIwMn0.fyNmsSolIEksQpF8XxF5t7Urezwnpgb0vbTsWxqTdyI";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
 let currentRole = "guest";
 
-function log(msg, obj){
-  console.log(msg, obj || "");
-  const d = document.getElementById("debug");
-  if (d) d.textContent = obj ? msg + "\n" + JSON.stringify(obj, null, 2) : msg;
-}
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m])); }
 function val(id){ return (document.getElementById(id)?.value || "").trim(); }
 
-const SECTION_MAP = {
-  home: ["home", "hero"],
-  add: ["add", "addPanel"],
-  explore: ["explore", "explorePanel"]
-};
-
-function hideAllSections(){
-  Object.values(SECTION_MAP).flat().forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add("hidden");
-  });
-}
 function showSection(name){
-  hideAllSections();
-  const ids = SECTION_MAP[name] || [];
-  let shown = false;
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.classList.remove("hidden"); shown = true; }
-  });
-  if (!shown) log("Section not found: " + name);
+  ["home","add","remove","explore"].forEach(id => document.getElementById(id).classList.add("hidden"));
+  document.getElementById(name).classList.remove("hidden");
   if (name === "explore") loadCards();
 }
+function openAuth(){ document.getElementById("authModal").classList.add("show"); }
+function closeAuth(){ document.getElementById("authModal").classList.remove("show"); }
+function closeDetails(){ document.getElementById("detailsModal").classList.remove("show"); }
 
-function openAuth(){ document.getElementById("authModal")?.classList.add("show"); }
-function closeAuth(){ document.getElementById("authModal")?.classList.remove("show"); }
-
-async function refreshAuthUI(){
-  const { data: { user } } = await sb.auth.getUser();
+async function refreshAuth(){
+  const { data:{ user } } = await sb.auth.getUser();
   currentUser = user || null;
   currentRole = "guest";
 
@@ -210,39 +213,24 @@ async function refreshAuthUI(){
     const { data, error } = await sb.from("profiles").select("role").eq("id", currentUser.id).single();
     currentRole = error ? "viewer" : (data?.role || "viewer");
   }
-
-  const roleBadge = document.getElementById("roleBadge");
-  if (roleBadge) roleBadge.textContent = currentRole.toUpperCase();
-
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) logoutBtn.classList.toggle("hidden", !currentUser);
+  document.getElementById("roleBadge").textContent = currentRole.toUpperCase();
+  document.getElementById("logoutBtn").classList.toggle("hidden", !currentUser);
 }
 
 async function loginUser(){
-  const email = val("login_email") || val("authEmail");
-  const password = document.getElementById("login_password")?.value || document.getElementById("authPassword")?.value || "";
-
+  const email = val("login_email");
+  const password = document.getElementById("login_password").value;
   const { error } = await sb.auth.signInWithPassword({ email, password });
-  if (error){
-    log("Login failed", error);
-    alert("Login failed: " + error.message);
-    return;
-  }
-  await refreshAuthUI();
+  if (error){ alert("Login failed: " + error.message); return; }
+  await refreshAuth();
   closeAuth();
-  log("Login success ✅");
 }
 
 async function logoutUser(){
   const { error } = await sb.auth.signOut();
-  if (error){
-    log("Logout failed", error);
-    alert("Logout failed: " + error.message);
-    return;
-  }
-  await refreshAuthUI();
+  if (error){ alert("Logout failed: " + error.message); return; }
+  await refreshAuth();
   showSection("home");
-  log("Logout success ✅");
 }
 
 function requireAdmin(action){
@@ -257,16 +245,13 @@ function requireAdmin(action){
 async function uploadIfAny(bucket, inputId, folder){
   const input = document.getElementById(inputId);
   if (!input || !input.files || !input.files[0]) return null;
-
   const file = input.files[0];
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
-  const path = `${folder}/${Date.now()}_${Math.floor(Math.random()*100000)}.${ext}`;
-
+  const path = folder + "/" + Date.now() + "_" + Math.floor(Math.random()*100000) + "." + ext;
   const { error } = await sb.storage.from(bucket).upload(path, file);
   if (error) throw error;
   return path;
 }
-
 function idPhotoUrl(path){
   if (!path) return "";
   return sb.storage.from("id-photos").getPublicUrl(path).data.publicUrl;
@@ -275,103 +260,110 @@ function idPhotoUrl(path){
 async function loadCards(){
   const q = val("search");
   let query = sb.from("students")
-    .select("student_id,first_name,last_name,grade,class_name,class,phone,id_photo_path")
-    .order("student_id", { ascending: false });
+    .select("student_id,first_name,last_name,grade,class_name,phone,id_photo_path")
+    .order("student_id", { ascending:false });
 
   if (q){
-    query = query.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,phone.ilike.%${q}%,class_name.ilike.%${q}%,class.ilike.%${q}%`);
+    query = query.or("first_name.ilike.%" + q + "%,last_name.ilike.%" + q + "%,phone.ilike.%" + q + "%,class_name.ilike.%" + q + "%");
   }
 
   const { data, error } = await query;
   const box = document.getElementById("cards");
-  if (!box) return;
-
   box.innerHTML = "";
-  if (error){
-    log("Load cards failed", error);
-    box.innerHTML = "<p style='color:#fca5a5'>Load failed: " + esc(error.message) + "</p>";
-    return;
-  }
-  if (!data?.length){
-    box.innerHTML = "<p style='color:#bbb'>No records found.</p>";
-    return;
-  }
 
-  data.forEach(s => {
-    const cls = s.class_name ?? s.class ?? "";
-    const photo = s.id_photo_path
-      ? `<img src="${idPhotoUrl(s.id_photo_path)}" alt="ID Photo">`
-      : `<span style="color:#777">No ID photo</span>`;
+  if (error){ box.innerHTML = "<p style='color:#fca5a5'>Load failed</p>"; return; }
+  if (!data?.length){ box.innerHTML = "<p style='color:#bbb'>No records found.</p>"; return; }
 
+  data.forEach(s=>{
+    const img = s.id_photo_path ? "<img src='" + idPhotoUrl(s.id_photo_path) + "'>" : "<span style='color:#777'>No ID photo</span>";
     const card = document.createElement("div");
-    card.className = "card student-card";
-    card.innerHTML = `
-      <div class="photo">${photo}</div>
-      <h4>${esc(s.first_name)} ${esc(s.last_name)}</h4>
-      <p>${esc(s.grade)} + ${esc(cls)}</p>
-      <small>${esc(s.phone)}</small>
-    `;
-    card.onclick = () => openDetails(s.student_id);
+    card.className = "card";
+    card.innerHTML =
+      "<div class='photo'>" + img + "</div>" +
+      "<h4>" + esc(s.first_name) + " " + esc(s.last_name) + "</h4>" +
+      "<p>" + esc(s.grade) + " + " + esc(s.class_name) + "</p>" +
+      "<small>" + esc(s.phone) + "</small>";
+    card.onclick = function(){ openDetails(s.student_id); };
     box.appendChild(card);
   });
 }
 
-async function openDetails(studentId){
-  const { data, error } = await sb.from("students").select("*").eq("student_id", studentId).single();
-  if (error){
-    log("Open details failed", error);
-    alert("Cannot open details: " + error.message);
-    return;
-  }
+async function openDetails(id){
+  const { data, error } = await sb.from("students").select("*").eq("student_id", id).single();
+  if (error){ alert("Cannot open details: " + error.message); return; }
 
-  const body = document.getElementById("detailsBody") || document.getElementById("detailsContent");
-  const modal = document.getElementById("detailsModal");
-  if (!body || !modal) return;
-
-  const cls = data.class_name ?? data.class ?? "";
-  const addr = [data.address_line1, data.address_line2, data.address_line3].filter(Boolean).join(", ") || "-";
-  const photoHtml = data.id_photo_path
-    ? `<img src="${idPhotoUrl(data.id_photo_path)}" style="width:150px;height:170px;object-fit:cover;border-radius:10px;border:1px solid #333">`
+  const addr = [data.address_line1,data.address_line2,data.address_line3].filter(Boolean).join(", ") || "-";
+  const photo = data.id_photo_path
+    ? "<img src='" + idPhotoUrl(data.id_photo_path) + "' style='width:150px;height:170px;object-fit:cover;border-radius:10px;border:1px solid #333'>"
     : "No photo";
 
-  body.innerHTML = `
-    <div style="margin-bottom:10px">${photoHtml}</div>
-    <div class="two detail-grid">
-      <div class="kv"><b>Name</b><div>${esc((data.first_name||"") + " " + (data.last_name||""))}</div></div>
-      <div class="kv"><b>Grade + Class</b><div>${esc((data.grade||"") + " + " + cls)}</div></div>
-      <div class="kv"><b>Phone</b><div>${esc(data.phone||"-")}</div></div>
-      <div class="kv"><b>Transport</b><div>${esc(data.transport_method||"-")}</div></div>
-      <div class="kv"><b>Address</b><div>${esc(addr)}</div></div>
-    </div>
-  `;
-  modal.classList.add("show");
+  const birthBtn = data.birth_certificate_path
+    ? "<button class='btn' onclick=\"downloadBirth('" + esc(data.birth_certificate_path) + "')\">Download Birth Certificate</button>"
+    : "<span style='color:#aaa'>No birth certificate</span>";
+
+  const delBtn = currentRole === "admin"
+    ? "<button class='btn red' onclick='removeById(" + Number(data.student_id) + ")'>Delete Student</button>"
+    : "";
+
+  document.getElementById("detailsBody").innerHTML =
+    "<div style='margin-bottom:10px'>" + photo + "</div>" +
+    "<div class='detail-grid'>" +
+      "<div class='kv'><b>Name</b><div>" + esc((data.first_name||"") + " " + (data.last_name||"")) + "</div></div>" +
+      "<div class='kv'><b>Grade + Class</b><div>" + esc((data.grade||"") + " + " + (data.class_name||"")) + "</div></div>" +
+      "<div class='kv'><b>Phone</b><div>" + esc(data.phone||"-") + "</div></div>" +
+      "<div class='kv'><b>Transport</b><div>" + esc(data.transport_method||"-") + "</div></div>" +
+      "<div class='kv'><b>Address</b><div>" + esc(addr) + "</div></div>" +
+      "<div class='kv'><b>Father</b><div>" + esc((data.father_name||"-") + " | " + (data.father_phone||"-")) + "</div></div>" +
+      "<div class='kv'><b>Mother</b><div>" + esc((data.mother_name||"-") + " | " + (data.mother_phone||"-")) + "</div></div>" +
+    "</div>" +
+    "<div style='margin-top:12px;display:flex;gap:8px;flex-wrap:wrap'>" + birthBtn + delBtn + "</div>";
+
+  document.getElementById("detailsModal").classList.add("show");
 }
 
-function closeDetails(){
-  document.getElementById("detailsModal")?.classList.remove("show");
+async function downloadBirth(path){
+  const { data, error } = await sb.storage.from("birth-certificates").createSignedUrl(path, 60);
+  if (error){ alert("Download failed: " + error.message); return; }
+  window.open(data.signedUrl, "_blank");
 }
 
-async function addStudentFromForm(e){
+async function removeById(forcedId){
+  if (!requireAdmin("Remove student")) return;
+
+  const id = Number(forcedId || document.getElementById("remove_id").value);
+  if (!id){ alert("Enter valid student ID"); return; }
+  if (!confirm("Are you sure you want to remove this student?")) return;
+
+  const { error } = await sb.from("students").delete().eq("student_id", id);
+  if (error){ alert("Delete failed: " + error.message); return; }
+  closeDetails();
+  document.getElementById("remove_id").value = "";
+  loadCards();
+  alert("Student removed ✅");
+}
+
+document.getElementById("addForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   if (!requireAdmin("Add student")) return;
-  if (!confirm("Confirm add student?")) return;
+  if (!confirm("Confirm add student details?")) return;
 
   try{
     const idPhotoPath = await uploadIfAny("id-photos", "id_photo", "students/id-photo");
     const birthPath = await uploadIfAny("birth-certificates", "birth_certificate", "students/birth");
 
-    const classValue = val("class_name") || val("class");
-
     const payload = {
       first_name: val("first_name"),
       last_name: val("last_name"),
+      gender: val("gender") || null,
+      date_of_birth: document.getElementById("dob").value || null,
+      age: val("age") ? Number(val("age")) : null,
       grade: val("grade"),
-      class_name: classValue || null,
+      class_name: val("class_name"),
       phone: val("phone") || null,
       email: val("email") || null,
-      date_of_birth: document.getElementById("date_of_birth")?.value || document.getElementById("dob")?.value || null,
-      age: val("age") ? Number(val("age")) : null,
+      status: val("status") || null,
       transport_method: val("transport_method") || null,
+
       address_line1: val("address_line1") || null,
       address_line2: val("address_line2") || null,
       address_line3: val("address_line3") || null,
@@ -395,55 +387,19 @@ async function addStudentFromForm(e){
     };
 
     const { error } = await sb.from("students").insert([payload]);
-    if (error){
-      log("Insert failed", error);
-      alert("Insert failed: " + error.message);
-      return;
-    }
+    if (error){ alert("Insert failed: " + error.message); return; }
 
-    log("Student added ✅");
-    alert("Student added successfully");
+    alert("Student added ✅");
     e.target.reset();
     showSection("explore");
   }catch(err){
-    log("Add crashed", err);
     alert("Error: " + err.message);
   }
-}
-
-function bindForm(){
-  const form = document.getElementById("addForm") || document.getElementById("studentForm");
-  if (!form){
-    log("Add form not found (need id='addForm' or id='studentForm')");
-    return;
-  }
-  form.removeEventListener("submit", addStudentFromForm);
-  form.addEventListener("submit", addStudentFromForm);
-}
-
-window.showSection = showSection;
-window.openAuth = openAuth;
-window.closeAuth = closeAuth;
-window.loginUser = loginUser;
-window.logoutUser = logoutUser;
-window.loadCards = loadCards;
-window.openDetails = openDetails;
-window.closeDetails = closeDetails;
-// compatibility with old onclick names
-window.login = loginUser;
-window.logout = logoutUser;
-
-window.addEventListener("error", e => log("JS Error: " + e.message));
-window.addEventListener("unhandledrejection", e => log("Promise Error", { reason: String(e.reason) }));
-
-document.addEventListener("DOMContentLoaded", async () => {
-  bindForm();
-  await refreshAuthUI();
-  showSection("home");
-  await loadCards();
-  sb.auth.onAuthStateChange(async () => { await refreshAuthUI(); });
-  log("App ready ✅");
 });
+
+sb.auth.onAuthStateChange(async () => { await refreshAuth(); });
+refreshAuth();
+showSection("home");
 </script>
 </body>
 </html>
